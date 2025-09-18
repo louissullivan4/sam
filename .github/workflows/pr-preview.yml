@@ -26,8 +26,8 @@ jobs:
 
       - name: Clean install (workaround rollup issue)
         run: |
-            rm -rf node_modules package-lock.json
-            npm install
+          rm -rf node_modules package-lock.json
+          npm install
 
       - name: Typecheck
         run: npm run typecheck
@@ -38,8 +38,8 @@ jobs:
       - name: Format (check only)
         run: npm run format:check --if-present
 
-    #   - name: Tests
-    #     run: npm test --if-present
+      #   - name: Tests
+      #     run: npm test --if-present
 
       - name: Build
         run: npm run build
