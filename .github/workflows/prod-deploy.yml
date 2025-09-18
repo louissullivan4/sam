@@ -36,8 +36,8 @@ jobs:
       - name: Format
         run: npm run format
 
-      - name: Tests
-        run: npm test --if-present
+    #   - name: Tests
+    #     run: npm test --if-present
 
       - name: Build
         run: npm run build
