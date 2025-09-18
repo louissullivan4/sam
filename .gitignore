@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets
+.env
+.env.local
+.env.*.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.development.local
+.env.development
+.env.staging
+.env.staging.local
+
+# Firebase
+firebase.config
+firebase.json
+firestore.rules
+firestore.indexes.json
+.firebaserc

@@ -1,0 +1,417 @@
+import { useEffect, useMemo, useState, useCallback } from "react";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  orderBy,
+  query,
+  serverTimestamp,
+  deleteDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import {
+  DataTable,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableToolbar,
+  TableToolbarContent,
+  TableToolbarSearch,
+  Dropdown,
+  Tag,
+  InlineNotification,
+  Layer,
+  OverflowMenu,
+  OverflowMenuItem,
+  Modal,
+  NumberInput,
+  TextInput,
+} from "@carbon/react";
+import useUser from "../components/useUser";
+import type { User } from "../types";
+import { scoutCounties, countyToProvince } from "../refdata";
+
+const ROLE_OPTIONS: User["role"][] = ["Admin", "Accessor", "Inactive", "Rejected", "Pending"];
+
+
+const ROLE_COLOR: { [key in User["role"]]: "red" | "magenta" | "purple" | "blue" | "cyan" | "teal" | "green" | "gray" | "cool-gray" | "warm-gray" | "high-contrast" | "outline" | undefined } = {
+  Admin: "purple",
+  Accessor: "green",
+  Inactive: "gray",
+  Rejected: "red",
+  Pending: "teal",
+};
+
+function setRoleColor(role?: User["role"]) {
+  if (!role) return "gray";
+  return ROLE_COLOR[role] || "gray";
+}
+
+function roleIsAdmin(role?: string) {
+  return role === "Admin";
+}
+
+type EditableUser = Partial<User> & { uid: string };
+
+export default function AdminUsersNew() {
+  const { userData } = useUser();
+  const currentUserRole = userData?.role;
+  const isAdmin = roleIsAdmin(currentUserRole);
+
+  const [rows, setRows] = useState<User[]>([]);
+  const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editUser, setEditUser] = useState<EditableUser | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const q = query(collection(db, "users"), orderBy("name"));
+    return onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => ({ uid: d.id, ...(d.data() as any) })) as User[];
+        setRows(list);
+      },
+      (e) => setError(e.message),
+    );
+  }, []);
+
+  const filtered = useMemo(() => {
+    const t = search.toLowerCase().trim();
+    const list = rows.map((u) => ({
+      ...u,
+      province: u.scoutCounty ? countyToProvince[u.scoutCounty] || u.province || "" : u.province || "",
+    }));
+    if (!t) return list;
+    return list.filter((u) =>
+      [
+        u.name,
+        u.email,
+        u.role,
+        u.groupName,
+        u.scoutCounty,
+        countyToProvince[u.scoutCounty] || u.province,
+        String(u.skillLevelNumber ?? ""),
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(t),
+    );
+  }, [rows, search]);
+
+  const allUsers = useMemo(() => filtered.filter((u) => u.role !== "Pending"), [filtered]);
+  const incoming = useMemo(() => filtered.filter((u) => u.role === "Pending"), [filtered]);
+
+  const updateUser = useCallback(
+    async (uid: string, patch: Partial<User>) => {
+      setError(null);
+      setSavingId(uid);
+      try {
+        const updates: any = {
+          ...patch,
+          updatedAt: serverTimestamp(),
+        };
+        if (patch.scoutCounty !== undefined) {
+          updates.province = countyToProvince[patch.scoutCounty!] || "";
+        }
+        await updateDoc(doc(db, "users", uid), updates);
+      } catch (e: any) {
+        setError(e.message || "Update failed");
+      } finally {
+        setSavingId(null);
+      }
+    },
+    [],
+  );
+
+  const handleOpenEdit = (u: User) => {
+    setEditUser({
+      uid: u.uid,
+      name: u.name || "",
+      email: u.email || "",
+      groupName: u.groupName || "",
+      scoutCounty: u.scoutCounty || "",
+      province: countyToProvince[u.scoutCounty] || u.province || "",
+      role: u.role,
+      skillLevelNumber: Number(u.skillLevelNumber ?? 0),
+    });
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editUser) return;
+    const { uid, ...rest } = editUser;
+    await updateUser(uid, rest as Partial<User>);
+    setEditOpen(false);
+    setEditUser(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteUserId) return;
+    setError(null);
+    setSavingId(deleteUserId);
+    try {
+      await deleteDoc(doc(db, "users", deleteUserId));
+    } catch (e: any) {
+      setError(e.message || "Delete failed");
+    } finally {
+      setSavingId(null);
+      setDeleteOpen(false);
+      setDeleteUserId(null);
+    }
+  };
+
+  if (!isAdmin) {
+    return (
+      <InlineNotification
+        title="Insufficient permissions"
+        kind="error"
+        lowContrast
+        subtitle="Only Admins can view the user dashboard."
+      />
+    );
+  }
+
+  const CommonToolbar = (
+    <TableToolbar>
+      <TableToolbarContent>
+        <TableToolbarSearch persistent onChange={(e: any) => setSearch(e.target.value)} />
+      </TableToolbarContent>
+    </TableToolbar>
+  );
+
+  const renderActions = (u: User) => (
+    <OverflowMenu aria-label="Actions" flipped>
+      <OverflowMenuItem itemText="Edit" onClick={() => handleOpenEdit(u)} />
+      <OverflowMenuItem
+        isDelete
+        hasDivider
+        itemText="Delete"
+        onClick={() => {
+          setDeleteUserId(u.uid);
+          setDeleteOpen(true);
+        }}
+      />
+    </OverflowMenu>
+  );
+
+  const renderUsersTable = (
+    list: User[],
+    title: string,
+    columns: Array<{ key: keyof User | "province" | "createdAt"; header: string }>
+  ) => (
+    <DataTable
+      rows={list.map((u) => ({ id: u.uid, ...u }))}
+      headers={[...columns, { key: "actions" as const, header: "" }]}
+    >
+      {({ rows, headers, getHeaderProps, getTableProps }) => (
+        <TableContainer title={title}>
+          {CommonToolbar}
+          <Table {...getTableProps()}>
+            <TableHead>
+              <TableRow>
+                {headers.map((h) => (
+                  <TableHeader {...getHeaderProps({ header: h })}>
+                    {h.header}
+                  </TableHeader>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rows.map((r) => {
+                const u = list.find((x) => x.uid === r.id)!;
+                const derivedProvince = countyToProvince[u.scoutCounty] || u.province || "";
+                return (
+                  <TableRow key={u.uid} aria-busy={savingId === u.uid}>
+                    {columns.map(({ key }) => {
+                      switch (key) {
+                        case "name":
+                          return <TableCell key="name">{u.name || "—"}</TableCell>;
+                        case "email":
+                          return <TableCell key="email">{u.email || "—"}</TableCell>;
+                        case "groupName":
+                          return <TableCell key="groupName">{u.groupName || "—"}</TableCell>;
+                        case "scoutCounty":
+                          return (
+                            <TableCell key="scoutCounty">
+                              {u.scoutCounty ? <Tag size="sm">{u.scoutCounty}</Tag> : "—"}
+                            </TableCell>
+                          );
+                        case "province":
+                          return <TableCell key="province">{derivedProvince || "—"}</TableCell>;
+                        case "skillLevelNumber":
+                          return (
+                            <TableCell key="skillLevelNumber">
+                              {typeof u.skillLevelNumber === "number" ? u.skillLevelNumber : "—"}
+                            </TableCell>
+                          );
+                        case "role":
+                          return (
+                            <TableCell key="role">
+                              <Tag type={setRoleColor(u.role)} size="sm">{u.role}</Tag>
+                            </TableCell>
+                          );
+                        case "createdAt":
+                          return (
+                            <TableCell key="createdAt">
+                              {u.createdAt?.toDate
+                                ? u.createdAt.toDate().toLocaleDateString()
+                                : "—"}
+                            </TableCell>
+                          );
+                        default:
+                          return (
+                            <TableCell key={String(key)}>{(u as any)[key] ?? "—"}</TableCell>
+                          );
+                      }
+                    })}
+                    <TableCell key="actions">{renderActions(u)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </DataTable>
+  );
+
+  return (
+    <div style={{ display: "grid", gap: 24 }}>
+      {error && (
+        <InlineNotification
+          kind="error"
+          lowContrast
+          title="Operation failed"
+          subtitle={error}
+          onCloseButtonClick={() => setError(null)}
+        />
+      )}
+
+      {renderUsersTable(allUsers, "Users", [
+        { key: "name", header: "Name" },
+        { key: "email", header: "Email" },
+        { key: "groupName", header: "Group" },
+        { key: "scoutCounty", header: "Scout County" },
+        { key: "province", header: "Province" },
+        { key: "skillLevelNumber", header: "Skill" },
+        { key: "role", header: "Role" },
+      ])}
+
+      {isAdmin &&
+        renderUsersTable(incoming, "Incoming requests (Pending)", [
+          { key: "name", header: "Name" },
+          { key: "email", header: "Email" },
+          { key: "groupName", header: "Group" },
+          { key: "scoutCounty", header: "Scout County" },
+          { key: "province", header: "Province" },
+          { key: "createdAt", header: "Requested" },
+        ])}
+
+      <Modal
+        open={editOpen}
+        modalHeading="Edit user"
+        primaryButtonText="Save"
+        secondaryButtonText="Cancel"
+        onRequestClose={() => {
+          setEditOpen(false);
+          setEditUser(null);
+        }}
+        onRequestSubmit={handleSaveEdit}
+      >
+        {editUser && (
+          <div style={{ display: "grid", gap: 12 }}>
+            <TextInput
+              id="edit-name"
+              labelText="Full name"
+              value={editUser.name || ""}
+              onChange={(e: any) => setEditUser((u) => ({ ...u!, name: e.target.value }))}
+            />
+            <TextInput
+              id="edit-email"
+              labelText="Email"
+              type="email"
+              value={editUser.email || ""}
+              onChange={(e: any) => setEditUser((u) => ({ ...u!, email: e.target.value }))}
+            />
+            <TextInput
+              id="edit-group"
+              labelText="Group"
+              value={editUser.groupName || ""}
+              onChange={(e: any) => setEditUser((u) => ({ ...u!, groupName: e.target.value }))}
+            />
+            <Layer>
+              <Dropdown
+                id="edit-county"
+                label="Scout County"
+                titleText="Scout County"
+                items={scoutCounties}
+                selectedItem={editUser.scoutCounty || undefined}
+                onChange={(e: any) =>
+                  setEditUser((u) => ({
+                    ...u!,
+                    scoutCounty: e.selectedItem,
+                    province: countyToProvince[e.selectedItem] || "",
+                  }))
+                }
+                itemToString={(i: any) => i || ""}
+              />
+            </Layer>
+            <TextInput
+              id="edit-province"
+              labelText="Province (auto)"
+              value={editUser.province || ""}
+              readOnly
+            />
+            <NumberInput
+              id="edit-skill"
+              label="Skill level"
+              min={0}
+              step={1}
+              value={Number(editUser.skillLevelNumber ?? 0)}
+              onChange={(_evt: any, { value }: any) =>
+                setEditUser((u) => ({ ...u!, skillLevelNumber: Number(value || 0) }))
+              }
+            />
+            <Layer>
+              <Dropdown
+                id="edit-role"
+                label="Role"
+                titleText="Role"
+                items={ROLE_OPTIONS}
+                selectedItem={editUser.role || "Pending"}
+                onChange={(e: any) => setEditUser((u) => ({ ...u!, role: e.selectedItem }))}
+                itemToString={(i: any) => i || ""}
+              />
+            </Layer>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={deleteOpen}
+        modalHeading="Delete user?"
+        primaryButtonText="Delete"
+        secondaryButtonText="Cancel"
+        danger
+        onRequestClose={() => {
+          setDeleteOpen(false);
+          setDeleteUserId(null);
+        }}
+        onRequestSubmit={handleDelete}
+      >
+        This action cannot be undone.
+      </Modal>
+    </div>
+  );
+}
