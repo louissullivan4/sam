@@ -19,7 +19,6 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
       return;
     }
     const userData = doc(db, "users", user.uid);
-    console.log("Subscribing to user data", user.uid);
     const unsub = onSnapshot(userData, (snap) => {
       setRole(snap.exists() ? ((snap.data() as User).role ?? null) : null);
       setUserLoaded(true);

@@ -16,7 +16,7 @@ import type { User } from "../types";
 import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 
-export default function PublicForm() {
+export default function SignUp() {
   const nav = useNavigate();
   const [sent, setSent] = useState(false);
   const [name, setName] = useState("");
@@ -136,23 +136,27 @@ export default function PublicForm() {
         alignItems: "center",
         justifyContent: "center",
         background: "#f4f4f4",
-        padding: "2rem",
+        padding: "1rem", // friendlier on small screens
       }}
     >
       <Tile
-        style={{ width: "100%", maxWidth: 720, padding: "2rem 2rem 2.5rem" }}
+        style={{
+          width: "100%",
+          maxWidth: 720,
+          padding: "1.5rem 1.5rem 2rem", // slightly tighter padding for phones
+        }}
       >
-        <div style={{ margin: 0, marginBottom: "1.25rem" }}>
-          <h1 style={{ fontSize: 24, marginBottom: "0.5rem" }}>
-            Request a Camping Skills Assessment
+        <div style={{ margin: 0, marginBottom: "1rem" }}>
+          <h1 style={{ fontSize: 22, marginBottom: "0.5rem" }}>
+            Create your SAM account
           </h1>
-          <h6>
-            Already have an account? <Link to="/signin">Sign In</Link>
-          </h6>
+          <p style={{ margin: 0, fontSize: 14, color: "#525252" }}>
+            Already have an account? <Link to="/signin">Sign in</Link>
+          </p>
         </div>
 
         {error && (
-          <div style={{ margin: "1rem" }}>
+          <div style={{ margin: "0.75rem 0" }}>
             <InlineNotification
               title="Error"
               subtitle={error}
@@ -164,7 +168,7 @@ export default function PublicForm() {
         )}
 
         {sent && (
-          <div style={{ margin: "1rem" }}>
+          <div style={{ margin: "0.75rem 0" }}>
             <InlineNotification
               title="Submitted"
               subtitle="We'll be in touch soon."
@@ -176,7 +180,12 @@ export default function PublicForm() {
         )}
 
         <Form onSubmit={onSubmit}>
-          <div style={{ display: "grid", gap: 16 }}>
+          <div
+            style={{
+              display: "grid",
+              gap: 14, // slightly tighter vertical rhythm helps on mobile
+            }}
+          >
             <TextInput
               id="name"
               name="name"
@@ -184,6 +193,7 @@ export default function PublicForm() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
             />
 
             <TextInput
@@ -194,6 +204,7 @@ export default function PublicForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
             />
 
             <PasswordInput
@@ -205,17 +216,19 @@ export default function PublicForm() {
               hidePasswordLabel="Hide"
               showPasswordLabel="Show"
               required
+              autoComplete="new-password"
             />
 
             <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              labelText="Confirm Password"
+              labelText="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               hidePasswordLabel="Hide"
               showPasswordLabel="Show"
               required
+              autoComplete="new-password"
             />
 
             <TextInput
@@ -225,6 +238,7 @@ export default function PublicForm() {
               required
               value={group}
               onChange={(e) => setGroup(e.target.value)}
+              autoComplete="organization"
             />
 
             <ComboBox
@@ -239,6 +253,7 @@ export default function PublicForm() {
                 setScoutCounty(selectedItem as string)
               }
               required
+              // Carbon ComboBox is already mobile-friendly; no extra props needed
             />
 
             <TextInput
@@ -246,6 +261,7 @@ export default function PublicForm() {
               labelText="Province"
               value={province}
               onChange={(e) => setProvince(e.target.value)}
+              readOnly // kept readOnly to reflect auto-calculated value
             />
 
             <NumberInput
@@ -259,9 +275,9 @@ export default function PublicForm() {
               required
             />
 
-            <div style={{ marginTop: 8 }}>
-              <Button kind="primary" type="submit">
-                Create Account
+            <div style={{ marginTop: 6 }}>
+              <Button kind="primary" type="submit" style={{ width: "100%" }}>
+                Create account
               </Button>
             </div>
           </div>

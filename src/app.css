@@ -1,0 +1,28 @@
+.app-content {
+  margin-left: 256px;
+  padding: 24px;
+}
+@media (max-width: 1055px) {
+  .app-content {
+    margin-left: 0 !important;
+    padding: 16px;
+  }
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-scroll table {
+  min-width: 720px;
+}
+
+.stack-gap {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 1056px) {
+  .stack-gap {
+    gap: 24px;
+  }
+}

@@ -7,17 +7,22 @@ import {
   SideNavItems,
   SideNavLink,
   Content,
+  HeaderMenuButton,
+  SkipToContent,
 } from "@carbon/react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Logout } from "@carbon/icons-react";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import useUser from "../components/useUser";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import useIsSmallScreen from "../hooks/useIsSmallScreen";
 
 export default function AppShell() {
   const loc = useLocation();
   const { userData, userLoading } = useUser();
+  const isSmall = useIsSmallScreen();
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     if (!userLoading && userData?.role === "Pending") {
@@ -25,22 +30,41 @@ export default function AppShell() {
     }
   }, [userData, userLoading]);
 
+  useEffect(() => {
+    if (isSmall) setNavOpen(false);
+  }, [loc.pathname, isSmall]);
+
+  const toggleNav = useCallback(() => setNavOpen((v) => !v), []);
+
   return (
     <>
+      <SkipToContent />
       <Header aria-label="Camping Adventure Skills Assessments">
+        <HeaderMenuButton
+          aria-label="Open menu"
+          isCollapsible
+          onClick={toggleNav}
+          isActive={navOpen}
+        />
         <HeaderName as={Link} to="/" prefix="SAM">
           Scouting Assessments Manager
         </HeaderName>
         <HeaderGlobalBar>
           <HeaderGlobalAction
-            aria-label="Account"
+            aria-label="Sign out"
             onClick={() => signOut(auth)}
           >
             <Logout size={30} />
           </HeaderGlobalAction>
         </HeaderGlobalBar>
       </Header>
-      <SideNav isFixedNav expanded aria-label="Side navigation">
+
+      <SideNav
+        isFixedNav={!isSmall}
+        expanded={!isSmall || navOpen}
+        aria-label="Side navigation"
+        onOverlayClick={() => setNavOpen(false)}
+      >
         <SideNavItems>
           <SideNavLink
             href="/requests"
@@ -64,7 +88,8 @@ export default function AppShell() {
           )}
         </SideNavItems>
       </SideNav>
-      <Content id="main-content" style={{ marginLeft: 256, padding: 24 }}>
+
+      <Content id="main-content" className="app-content">
         <Outlet />
       </Content>
     </>
