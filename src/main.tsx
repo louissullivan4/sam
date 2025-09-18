@@ -12,6 +12,7 @@ import Assessments from "./pages/Assessments";
 import AssessmentDetail from "./pages/AssessmentDetail";
 import AdminUsers from "./pages/AdminUsers";
 import RequireAuth from "./components/RequireAuth";
+import "./app.css";
 
 const router = createBrowserRouter([
   {

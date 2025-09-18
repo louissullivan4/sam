@@ -18,14 +18,21 @@ import {
   OverflowMenuItem,
   TextInput,
   NumberInput,
+  ComposedModal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "@carbon/react";
 import type { Note, Request } from "../types";
 import useUser from "../components/useUser";
 import { formatDate, setTagType } from "../lib/comm";
+import useIsSmallScreen from "../hooks/useIsSmallScreen";
+import { List as ListIcon } from "@carbon/icons-react"; // optional icon for Actions FAB
 
 export default function AssessmentDetail() {
   const { id } = useParams();
   const { userData } = useUser();
+  const isSmall = useIsSmallScreen();
 
   const [req, setReq] = useState<(Request & { id: string }) | null>(null);
   const [note, setNote] = useState<Note | null>(null);
@@ -44,6 +51,9 @@ export default function AssessmentDetail() {
     skillLevelNumber: 1,
     numberOfPeopleToBeAssessed: 1,
   });
+
+  // Mobile actions modal
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -132,7 +142,7 @@ export default function AssessmentDetail() {
   async function inProgressRequest() {
     if (!req) return;
     try {
-      const note = {
+      const newNote: Note = {
         authorId: userData?.name || "unknown",
         createdAt: new Date(),
         content: `Request marked as in progress by ${userData?.email || "unknown"}`,
@@ -140,8 +150,9 @@ export default function AssessmentDetail() {
       await updateDoc(doc(db, "requests", req.id), {
         status: "In Progress",
         updatedAt: new Date(),
-        notes: [...(req.notes || []), note],
+        notes: [...(req.notes || []), newNote],
       });
+      setActionsOpen(false);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : String(e));
     }
@@ -150,7 +161,7 @@ export default function AssessmentDetail() {
   async function completeRequest() {
     if (!req) return;
     try {
-      const note = {
+      const newNote: Note = {
         authorId: userData?.name || "unknown",
         createdAt: new Date(),
         content: `Request marked as completed by ${userData?.email || "unknown"}`,
@@ -158,8 +169,9 @@ export default function AssessmentDetail() {
       await updateDoc(doc(db, "requests", req.id), {
         status: "Completed",
         updatedAt: new Date(),
-        notes: [...(req.notes || []), note],
+        notes: [...(req.notes || []), newNote],
       });
+      setActionsOpen(false);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : String(e));
     }
@@ -168,7 +180,7 @@ export default function AssessmentDetail() {
   async function cancelRequest() {
     if (!req) return;
     try {
-      const note = {
+      const newNote: Note = {
         authorId: userData?.name || "unknown",
         createdAt: new Date(),
         content: `Request cancelled by ${userData?.email || "unknown"}`,
@@ -176,8 +188,9 @@ export default function AssessmentDetail() {
       await updateDoc(doc(db, "requests", req.id), {
         status: "Cancelled",
         updatedAt: new Date(),
-        notes: [...(req.notes || []), note],
+        notes: [...(req.notes || []), newNote],
       });
+      setActionsOpen(false);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : String(e));
     }
@@ -187,7 +200,7 @@ export default function AssessmentDetail() {
     if (!req || !userData) return;
     setActionError(null);
     try {
-      const note = {
+      const newNote: Note = {
         authorId: userData?.name || "unknown",
         createdAt: new Date(),
         content: `Request assigned to ${userData?.email || "unknown"}`,
@@ -198,8 +211,9 @@ export default function AssessmentDetail() {
         accessorName: userData.name,
         accessorEmail: userData.email,
         updatedAt: new Date(),
-        notes: [...(req.notes || []), note],
+        notes: [...(req.notes || []), newNote],
       });
+      setActionsOpen(false);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : String(e));
     }
@@ -209,7 +223,7 @@ export default function AssessmentDetail() {
     if (!req || !userData) return;
     setActionError(null);
     try {
-      const note = {
+      const newNote: Note = {
         authorId: userData?.name || "unknown",
         createdAt: new Date(),
         content: `Request unassigned from ${userData?.email || "unknown"}`,
@@ -220,8 +234,9 @@ export default function AssessmentDetail() {
         accessorName: "",
         accessorEmail: "",
         updatedAt: new Date(),
-        notes: [...(req.notes || []), note],
+        notes: [...(req.notes || []), newNote],
       });
+      setActionsOpen(false);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : String(e));
     }
@@ -231,7 +246,7 @@ export default function AssessmentDetail() {
     if (!req) return;
     setActionError(null);
     try {
-      const note = {
+      const newNote: Note = {
         authorId: userData?.name || "unknown",
         createdAt: new Date(),
         content: `Request edited by ${userData?.email || "unknown"}`,
@@ -244,7 +259,7 @@ export default function AssessmentDetail() {
           editValues.numberOfPeopleToBeAssessed || 1,
         ),
         updatedAt: new Date(),
-        notes: [...(req.notes || []), note],
+        notes: [...(req.notes || []), newNote],
       });
       setEditing(false);
     } catch (e) {
@@ -302,8 +317,68 @@ export default function AssessmentDetail() {
     );
   }
 
+  // Action items shared by desktop kebab + mobile modal
+  // Each button is full width so they all match.
+  const ActionItems = (
+    <div
+      className="stack-gap"
+      style={{
+        display: "grid",
+        gap: 8,
+        gridTemplateColumns: "1fr",
+      }}
+    >
+      {canClaim && (
+        <Button kind="primary" onClick={assignToMe} style={{ width: "100%" }}>
+          Assign To Me
+        </Button>
+      )}
+      <Button
+        kind="secondary"
+        onClick={() => setEditing(true)}
+        disabled={!canEdit || editing}
+        style={{ width: "100%" }}
+      >
+        Edit
+      </Button>
+      <Button
+        kind="secondary"
+        onClick={inProgressRequest}
+        disabled={!canInProgress}
+        style={{ width: "100%" }}
+      >
+        In Progress
+      </Button>
+      <Button
+        kind="secondary"
+        onClick={completeRequest}
+        disabled={!canComplete}
+        style={{ width: "100%" }}
+      >
+        Complete
+      </Button>
+      {canUnClaim && (
+        <Button
+          kind="danger--tertiary"
+          onClick={unAssignFromMe}
+          style={{ width: "100%" }}
+        >
+          Unassign From Me
+        </Button>
+      )}
+      <Button
+        kind="danger"
+        onClick={cancelRequest}
+        disabled={!canCancel}
+        style={{ width: "100%" }}
+      >
+        Cancel
+      </Button>
+    </div>
+  );
+
   return (
-    <div style={{ display: "grid", gap: 16, maxWidth: 1000 }}>
+    <div className="stack-gap" style={{ maxWidth: 1000, position: "relative" }}>
       {actionError && (
         <InlineNotification
           kind="error"
@@ -314,44 +389,61 @@ export default function AssessmentDetail() {
         />
       )}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <h3 style={{ margin: 0, flex: "0 0 auto" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          flexWrap: "wrap",
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            flex: "1 1 auto",
+            minWidth: 0,
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
           Request Number: {req.id}
         </h3>
-        <div style={{ flex: 1 }} />
-        <OverflowMenu size="lg">
-          {canClaim && (
-            <OverflowMenuItem itemText="Assign To Me" onClick={assignToMe} />
-          )}
-          <OverflowMenuItem
-            itemText="Edit"
-            onClick={() => setEditing(true)}
-            disabled={!canEdit || editing}
-          />
-          <OverflowMenuItem
-            itemText="In Progress"
-            onClick={inProgressRequest}
-            disabled={!canInProgress}
-          />
-          <OverflowMenuItem
-            itemText="Complete"
-            onClick={completeRequest}
-            disabled={!canComplete}
-          />
-          {canUnClaim && (
+
+        {!isSmall && (
+          <OverflowMenu size="lg">
+            {canClaim && (
+              <OverflowMenuItem itemText="Assign To Me" onClick={assignToMe} />
+            )}
             <OverflowMenuItem
-              itemText="Unassign From Me"
-              isDelete
-              onClick={unAssignFromMe}
+              itemText="Edit"
+              onClick={() => setEditing(true)}
+              disabled={!canEdit || editing}
             />
-          )}
-          <OverflowMenuItem
-            itemText="Cancel"
-            isDelete
-            onClick={cancelRequest}
-            disabled={!canCancel}
-          />
-        </OverflowMenu>
+            <OverflowMenuItem
+              itemText="In Progress"
+              onClick={inProgressRequest}
+              disabled={!canInProgress}
+            />
+            <OverflowMenuItem
+              itemText="Complete"
+              onClick={completeRequest}
+              disabled={!canComplete}
+            />
+            {canUnClaim && (
+              <OverflowMenuItem
+                itemText="Unassign From Me"
+                isDelete
+                onClick={unAssignFromMe}
+              />
+            )}
+            <OverflowMenuItem
+              itemText="Cancel"
+              isDelete
+              onClick={cancelRequest}
+              disabled={!canCancel}
+            />
+          </OverflowMenu>
+        )}
       </div>
 
       <Tile>
@@ -365,7 +457,7 @@ export default function AssessmentDetail() {
           <StructuredListBody>
             <StructuredListRow>
               <StructuredListCell>Requester</StructuredListCell>
-              <StructuredListCell>
+              <StructuredListCell style={{ overflowWrap: "anywhere" }}>
                 {editing ? (
                   <TextInput
                     id="edit-name"
@@ -384,7 +476,7 @@ export default function AssessmentDetail() {
 
             <StructuredListRow>
               <StructuredListCell>Email</StructuredListCell>
-              <StructuredListCell>
+              <StructuredListCell style={{ overflowWrap: "anywhere" }}>
                 {editing ? (
                   <TextInput
                     id="edit-email"
@@ -456,7 +548,9 @@ export default function AssessmentDetail() {
             {req.accessorName && !editing && (
               <StructuredListRow>
                 <StructuredListCell>Accessor</StructuredListCell>
-                <StructuredListCell>{req.accessorName}</StructuredListCell>
+                <StructuredListCell style={{ overflowWrap: "anywhere" }}>
+                  {req.accessorName}
+                </StructuredListCell>
               </StructuredListRow>
             )}
 
@@ -481,7 +575,9 @@ export default function AssessmentDetail() {
         </StructuredListWrapper>
 
         {editing && (
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <div
+            style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}
+          >
             <Button kind="primary" onClick={handleSaveEdit}>
               Save changes
             </Button>
@@ -514,33 +610,80 @@ export default function AssessmentDetail() {
           </div>
         </div>
 
-        <StructuredListWrapper style={{ marginTop: 16 }}>
-          <StructuredListHead>
-            <StructuredListRow head>
-              <StructuredListCell head>Author</StructuredListCell>
-              <StructuredListCell head>Date</StructuredListCell>
-              <StructuredListCell head>Note</StructuredListCell>
-            </StructuredListRow>
-          </StructuredListHead>
-          <StructuredListBody>
-            {(req.notes ?? []).length > 0 ? (
-              [...(req.notes as Note[])].reverse().map((n, index) => (
-                <StructuredListRow key={index}>
-                  <StructuredListCell>{n.authorId}</StructuredListCell>
-                  <StructuredListCell>
-                    {formatDate(n.createdAt)}
-                  </StructuredListCell>
-                  <StructuredListCell>{n.content}</StructuredListCell>
-                </StructuredListRow>
-              ))
-            ) : (
-              <StructuredListRow>
-                <StructuredListCell>No notes available</StructuredListCell>
-              </StructuredListRow>
-            )}
-          </StructuredListBody>
-        </StructuredListWrapper>
+        <div
+          className="stack-gap"
+          style={{ marginTop: 16, display: "grid", gap: 12 }}
+        >
+          {(req.notes ?? []).length > 0 ? (
+            [...(req.notes as Note[])].reverse().map((n, index) => (
+              <Tile key={index} style={{ padding: 12 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 8,
+                    gridTemplateColumns: isSmall
+                      ? "1fr"
+                      : "minmax(160px, 240px) 1fr",
+                    alignItems: "start",
+                  }}
+                >
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>
+                    <div style={{ fontWeight: 600 }}>
+                      {formatDate(n.createdAt)}
+                    </div>
+                    <div style={{ marginTop: 2 }}>{n.authorId || "—"}</div>
+                  </div>
+
+                  <div
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "anywhere",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {n.content}
+                  </div>
+                </div>
+              </Tile>
+            ))
+          ) : (
+            <Tile>No notes available</Tile>
+          )}
+        </div>
       </Tile>
+
+      {isSmall && (
+        <>
+          <Button
+            kind="primary"
+            size="lg"
+            onClick={() => setActionsOpen(true)}
+            renderIcon={ListIcon as any}
+            style={{
+              position: "fixed",
+              right: 16,
+              bottom: 16,
+              zIndex: 1000,
+              borderRadius: 999,
+            }}
+            iconDescription="Actions"
+            hasIconOnly
+          />
+
+          <ComposedModal
+            open={actionsOpen}
+            onClose={() => setActionsOpen(false)}
+          >
+            <ModalHeader title="Actions" />
+            <ModalBody>{ActionItems}</ModalBody>
+            <ModalFooter>
+              <Button kind="secondary" onClick={() => setActionsOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ComposedModal>
+        </>
+      )}
     </div>
   );
 }
