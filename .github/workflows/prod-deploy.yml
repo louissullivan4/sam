@@ -24,8 +24,10 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install deps
-        run: npm ci
+      - name: Clean install (workaround rollup issue)
+        run: |
+            rm -rf node_modules package-lock.json
+            npm install
 
       - name: Typecheck
         run: npm run typecheck
