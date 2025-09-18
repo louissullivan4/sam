@@ -28,8 +28,8 @@ export default function AppShell() {
   return (
     <>
       <Header aria-label="Camping Adventure Skills Assessments">
-        <HeaderName as={Link} to="/" prefix="SCAM">
-          Scouts Camping Assessments Manager
+        <HeaderName as={Link} to="/" prefix="SAM">
+          Scouting Assessments Manager
         </HeaderName>
         <HeaderGlobalBar>
           <HeaderGlobalAction
