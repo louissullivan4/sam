@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function userDoc(uid) { return get(/databases/$(database)/documents/users/$(uid)); }
+    function isAccessor() {
+      return isSignedIn() && userDoc(request.auth.uid).data.role in ["Accessor", "Admin"];
+    }
+    function isAdmin() {
+      return isSignedIn() && userDoc(request.auth.uid).data.role == "Admin";
+    }
+
+    // --- SignUp (public create only) ---
+    match /signup/{id} {
+      allow create: if true;
+    }
+
+    // --- Requests ---
+    match /requests/{id} {
+      // Anyone can create a request
+      allow create: if true
+        // optional sanity checks (uncomment if you want stricter validation)
+        // && request.resource.data.keys().hasAll(["createdAt"])
+        // && request.resource.data.createdAt is timestamp
+        // && request.resource.data.createdAt <= request.time
+      ;
+
+      // Accessor/Admin can read, update, delete everything
+      allow read, update, delete: if isAccessor();
+    }
+
+    // --- Users ---
+    match /users/{uid} {
+      // Anyone signed-in can create their own user doc,
+      // but they cannot set a privileged role on create.
+      allow create: if true;
+
+      // Everyone signed-in can read user docs (adjust if you want stricter privacy)
+      allow read: if isSignedIn();
+
+      // A user can update their own profile BUT cannot change privileged fields.
+      allow update: if isSignedIn() && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role   // no self-elevation
+        && request.resource.data.active == resource.data.active
+        && request.resource.data.regions == resource.data.regions
+        && request.resource.data.skills == resource.data.skills;
+
+      // Admins (and Accessors via isAccessor) can do anything
+      allow read, create, update, delete: if isAccessor();
+    }
+
+    // --- Deny everything else ---
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

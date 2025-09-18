@@ -1,0 +1,23 @@
+{
+  "projects": {
+    "dev": "sam-dev-db8f6",
+    "prod": "sam-prod-3b980"
+  },
+  "targets": {
+    "sam-dev-db8f6": {
+      "hosting": {
+        "prod": [
+          "sam-prod-site"
+        ]
+      }
+    },
+    "sam-prod-3b980": {
+      "hosting": {
+        "prod": [
+          "sam-prod-3b980"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
