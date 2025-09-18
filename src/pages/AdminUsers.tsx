@@ -6,7 +6,6 @@ import {
   updateDoc,
   orderBy,
   query,
-  serverTimestamp,
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -31,6 +30,7 @@ import {
   Modal,
   NumberInput,
   TextInput,
+  SkeletonText,
 } from "@carbon/react";
 import useUser from "../components/useUser";
 import type { User } from "../types";
@@ -60,7 +60,7 @@ function roleIsAdmin(role?: string) {
 type EditableUser = Partial<User> & { uid: string };
 
 export default function AdminUsersNew() {
-  const { userData } = useUser();
+  const { userData, userLoading } = useUser();
   const currentUserRole = userData?.role;
   const isAdmin = roleIsAdmin(currentUserRole);
 
@@ -80,6 +80,7 @@ export default function AdminUsersNew() {
     return onSnapshot(
       q,
       (snap) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const list = snap.docs.map((d) => ({ uid: d.id, ...(d.data() as any) })) as User[];
         setRows(list);
       },
@@ -118,16 +119,16 @@ export default function AdminUsersNew() {
       setError(null);
       setSavingId(uid);
       try {
-        const updates: any = {
+        const updates: Partial<User> = {
           ...patch,
-          updatedAt: serverTimestamp(),
+          updatedAt: new Date()
         };
         if (patch.scoutCounty !== undefined) {
           updates.province = countyToProvince[patch.scoutCounty!] || "";
         }
         await updateDoc(doc(db, "users", uid), updates);
-      } catch (e: any) {
-        setError(e.message || "Update failed");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Update failed");
       } finally {
         setSavingId(null);
       }
@@ -163,14 +164,23 @@ export default function AdminUsersNew() {
     setSavingId(deleteUserId);
     try {
       await deleteDoc(doc(db, "users", deleteUserId));
-    } catch (e: any) {
-      setError(e.message || "Delete failed");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Delete failed. Please try again later.");
     } finally {
       setSavingId(null);
       setDeleteOpen(false);
       setDeleteUserId(null);
     }
   };
+
+  if (userLoading) {
+    return (
+      <div style={{ maxWidth: 900 }}>
+        <SkeletonText heading width="30%" />
+        <SkeletonText paragraph lineCount={3} />
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (
@@ -186,6 +196,7 @@ export default function AdminUsersNew() {
   const CommonToolbar = (
     <TableToolbar>
       <TableToolbarContent>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <TableToolbarSearch persistent onChange={(e: any) => setSearch(e.target.value)} />
       </TableToolbarContent>
     </TableToolbar>
@@ -232,7 +243,7 @@ export default function AdminUsersNew() {
               {rows.map((r) => {
                 const u = list.find((x) => x.uid === r.id);
                 if (!u) return null;
-                const derivedProvince = countyToProvince[u.scoutCounty as any] || u.province || "";
+                const derivedProvince = countyToProvince[u.scoutCounty as string] || u.province || "";
                 return (
                   <TableRow key={u.uid} aria-busy={savingId === u.uid}>
                     {columns.map(({ key }) => {
@@ -266,7 +277,7 @@ export default function AdminUsersNew() {
                         case "createdAt":
                           return (
                             <TableCell key="createdAt">
-                              {formatDate(u.createdAt) || "—"}
+                              {formatDate(u.createdAt.toString()) || "—"}
                             </TableCell>
                           );
                         default:
@@ -378,9 +389,9 @@ export default function AdminUsersNew() {
               label="Skill level"
               min={0}
               step={1}
-              value={Number(editUser.skillLevelNumber ?? 0)}
-              onChange={(_evt: any, { value }: any) =>
-                setEditUser((u) => ({ ...u!, skillLevelNumber: Number(value || 0) }))
+              value={Number(editUser.skillLevelNumber ?? 1)}
+              onChange={(_evt: unknown, { value }: { value: number | string }) =>
+                setEditUser((u) => ({ ...u!, skillLevelNumber: Number(value || 1) }))
               }
             />
             <Layer>
@@ -390,7 +401,7 @@ export default function AdminUsersNew() {
                 titleText="Role"
                 items={ROLE_OPTIONS}
                 selectedItem={editUser.role || "Pending"}
-                onChange={(e: any) => setEditUser((u) => ({ ...u!, role: e.selectedItem }))}
+                onChange={(e: { selectedItem: User["role"] }) => setEditUser((u) => ({ ...u!, role: e.selectedItem }))}
                 itemToString={(i: any) => i || ""}
               />
             </Layer>

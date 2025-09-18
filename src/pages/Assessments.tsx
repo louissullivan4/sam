@@ -18,6 +18,7 @@ import {
   ModalBody,
   ModalFooter,
   Dropdown,
+  SkeletonText,
 } from "@carbon/react";
 import {
   collection,
@@ -146,7 +147,12 @@ export default function Assessments() {
   };
 
   if (userLoading) {
-    return <p>Loading user...</p>;
+    return (
+      <div style={{ maxWidth: 900 }}>
+        <SkeletonText heading width="30%" />
+        <SkeletonText paragraph lineCount={3} />
+      </div>
+    );
   }
 
   return (
