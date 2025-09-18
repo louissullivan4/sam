@@ -37,26 +37,44 @@ export default function PublicForm() {
     }
   }, [scoutCounty]);
 
-  function validatePassword(password: string, confirmPassword: string): {isValid: boolean, errorMessage: string | null} {
+  function validatePassword(
+    password: string,
+    confirmPassword: string,
+  ): { isValid: boolean; errorMessage: string | null } {
     if (password !== confirmPassword) {
-      return {isValid: false, errorMessage: "Passwords do not match."};
+      return { isValid: false, errorMessage: "Passwords do not match." };
     }
     if (password.length < 6) {
-      return {isValid: false, errorMessage: "Password should be at least 6 characters long."};
+      return {
+        isValid: false,
+        errorMessage: "Password should be at least 6 characters long.",
+      };
     }
     if (!/[A-Z]/.test(password)) {
-      return {isValid: false, errorMessage: "Password should contain at least one uppercase letter."};
+      return {
+        isValid: false,
+        errorMessage: "Password should contain at least one uppercase letter.",
+      };
     }
     if (!/[a-z]/.test(password)) {
-      return {isValid: false, errorMessage: "Password should contain at least one lowercase letter."};
+      return {
+        isValid: false,
+        errorMessage: "Password should contain at least one lowercase letter.",
+      };
     }
     if (!/[0-9]/.test(password)) {
-      return {isValid: false, errorMessage: "Password should contain at least one number."};
+      return {
+        isValid: false,
+        errorMessage: "Password should contain at least one number.",
+      };
     }
     if (!/[\W_]/.test(password)) {
-      return {isValid: false, errorMessage: "Password should contain at least one special character."};
+      return {
+        isValid: false,
+        errorMessage: "Password should contain at least one special character.",
+      };
     }
-    return {isValid: true, errorMessage: null}; 
+    return { isValid: true, errorMessage: null };
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -64,19 +82,24 @@ export default function PublicForm() {
     setError(null);
 
     try {
-
-      const { isValid, errorMessage } = validatePassword(password, confirmPassword);
+      const { isValid, errorMessage } = validatePassword(
+        password,
+        confirmPassword,
+      );
 
       if (!isValid) {
         setError(errorMessage);
         return;
       }
 
-      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password)
-        .catch((e) => {
-          setError(e.message);
-          return null;
-        });
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password,
+      ).catch((e) => {
+        setError(e.message);
+        return null;
+      });
 
       if (!cred) return;
 
@@ -97,9 +120,11 @@ export default function PublicForm() {
       setSent(true);
 
       nav("/pending");
-    } catch (e:unknown) {
+    } catch (e: unknown) {
       console.error(e);
-      setError("Could not create your account. Please try again or contact sullivanlouis0@gmail.com");
+      setError(
+        "Could not create your account. Please try again or contact sullivanlouis0@gmail.com",
+      );
     }
   }
 
@@ -118,10 +143,12 @@ export default function PublicForm() {
         style={{ width: "100%", maxWidth: 720, padding: "2rem 2rem 2.5rem" }}
       >
         <div style={{ margin: 0, marginBottom: "1.25rem" }}>
-        <h1 style={{ fontSize: 24, marginBottom: "0.5rem" }}>
-          Request a Camping Skills Assessment
-        </h1>
-        <h6>Already have an account? <Link to="/signin">Sign In</Link></h6>
+          <h1 style={{ fontSize: 24, marginBottom: "0.5rem" }}>
+            Request a Camping Skills Assessment
+          </h1>
+          <h6>
+            Already have an account? <Link to="/signin">Sign In</Link>
+          </h6>
         </div>
 
         {error && (
@@ -179,7 +206,6 @@ export default function PublicForm() {
               showPasswordLabel="Show"
               required
             />
-            
 
             <PasswordInput
               id="confirmPassword"
@@ -191,7 +217,6 @@ export default function PublicForm() {
               showPasswordLabel="Show"
               required
             />
-
 
             <TextInput
               id="group"

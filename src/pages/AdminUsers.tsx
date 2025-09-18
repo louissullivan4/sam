@@ -37,10 +37,30 @@ import type { User } from "../types";
 import { scoutCounties, countyToProvince } from "../refdata";
 import { formatDate } from "../lib/comm";
 
-const ROLE_OPTIONS: User["role"][] = ["Admin", "Accessor", "Inactive", "Rejected", "Pending"];
+const ROLE_OPTIONS: User["role"][] = [
+  "Admin",
+  "Accessor",
+  "Inactive",
+  "Rejected",
+  "Pending",
+];
 
-
-const ROLE_COLOR: { [key in User["role"]]: "red" | "magenta" | "purple" | "blue" | "cyan" | "teal" | "green" | "gray" | "cool-gray" | "warm-gray" | "high-contrast" | "outline" | undefined } = {
+const ROLE_COLOR: {
+  [key in User["role"]]:
+    | "red"
+    | "magenta"
+    | "purple"
+    | "blue"
+    | "cyan"
+    | "teal"
+    | "green"
+    | "gray"
+    | "cool-gray"
+    | "warm-gray"
+    | "high-contrast"
+    | "outline"
+    | undefined;
+} = {
   Admin: "purple",
   Accessor: "green",
   Inactive: "gray",
@@ -80,8 +100,10 @@ export default function AdminUsersNew() {
     return onSnapshot(
       q,
       (snap) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const list = snap.docs.map((d) => ({ uid: d.id, ...(d.data() as any) })) as User[];
+        const list = snap.docs.map((d) => ({
+          uid: d.id,
+          ...(d.data() as any),
+        })) as User[];
         setRows(list);
       },
       (e) => setError(e.message),
@@ -92,7 +114,9 @@ export default function AdminUsersNew() {
     const t = search.toLowerCase().trim();
     const list = rows.map((u) => ({
       ...u,
-      province: u.scoutCounty ? countyToProvince[u.scoutCounty] || u.province || "" : u.province || "",
+      province: u.scoutCounty
+        ? countyToProvince[u.scoutCounty] || u.province || ""
+        : u.province || "",
     }));
     if (!t) return list;
     return list.filter((u) =>
@@ -111,30 +135,33 @@ export default function AdminUsersNew() {
     );
   }, [rows, search]);
 
-  const allUsers = useMemo(() => filtered.filter((u) => u.role !== "Pending"), [filtered]);
-  const incoming = useMemo(() => filtered.filter((u) => u.role === "Pending"), [filtered]);
-
-  const updateUser = useCallback(
-    async (uid: string, patch: Partial<User>) => {
-      setError(null);
-      setSavingId(uid);
-      try {
-        const updates: Partial<User> = {
-          ...patch,
-          updatedAt: new Date()
-        };
-        if (patch.scoutCounty !== undefined) {
-          updates.province = countyToProvince[patch.scoutCounty!] || "";
-        }
-        await updateDoc(doc(db, "users", uid), updates);
-      } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : "Update failed");
-      } finally {
-        setSavingId(null);
-      }
-    },
-    [],
+  const allUsers = useMemo(
+    () => filtered.filter((u) => u.role !== "Pending"),
+    [filtered],
   );
+  const incoming = useMemo(
+    () => filtered.filter((u) => u.role === "Pending"),
+    [filtered],
+  );
+
+  const updateUser = useCallback(async (uid: string, patch: Partial<User>) => {
+    setError(null);
+    setSavingId(uid);
+    try {
+      const updates: Partial<User> = {
+        ...patch,
+        updatedAt: new Date(),
+      };
+      if (patch.scoutCounty !== undefined) {
+        updates.province = countyToProvince[patch.scoutCounty!] || "";
+      }
+      await updateDoc(doc(db, "users", uid), updates);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Update failed");
+    } finally {
+      setSavingId(null);
+    }
+  }, []);
 
   const handleOpenEdit = (u: User) => {
     setEditUser({
@@ -165,7 +192,11 @@ export default function AdminUsersNew() {
     try {
       await deleteDoc(doc(db, "users", deleteUserId));
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Delete failed. Please try again later.");
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Delete failed. Please try again later.",
+      );
     } finally {
       setSavingId(null);
       setDeleteOpen(false);
@@ -196,8 +227,10 @@ export default function AdminUsersNew() {
   const CommonToolbar = (
     <TableToolbar>
       <TableToolbarContent>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        <TableToolbarSearch persistent onChange={(e: any) => setSearch(e.target.value)} />
+        <TableToolbarSearch
+          persistent
+          onChange={(e: any) => setSearch(e.target.value)}
+        />
       </TableToolbarContent>
     </TableToolbar>
   );
@@ -220,7 +253,10 @@ export default function AdminUsersNew() {
   const renderUsersTable = (
     list: User[],
     title: string,
-    columns: Array<{ key: keyof User | "province" | "createdAt"; header: string }>
+    columns: Array<{
+      key: keyof User | "province" | "createdAt";
+      header: string;
+    }>,
   ) => (
     <DataTable
       rows={list.map((u) => ({ id: u.uid, ...u }))}
@@ -243,35 +279,56 @@ export default function AdminUsersNew() {
               {rows.map((r) => {
                 const u = list.find((x) => x.uid === r.id);
                 if (!u) return null;
-                const derivedProvince = countyToProvince[u.scoutCounty as string] || u.province || "";
+                const derivedProvince =
+                  countyToProvince[u.scoutCounty as string] || u.province || "";
                 return (
                   <TableRow key={u.uid} aria-busy={savingId === u.uid}>
                     {columns.map(({ key }) => {
                       switch (key) {
                         case "name":
-                          return <TableCell key="name">{u.name || "—"}</TableCell>;
+                          return (
+                            <TableCell key="name">{u.name || "—"}</TableCell>
+                          );
                         case "email":
-                          return <TableCell key="email">{u.email || "—"}</TableCell>;
+                          return (
+                            <TableCell key="email">{u.email || "—"}</TableCell>
+                          );
                         case "groupName":
-                          return <TableCell key="groupName">{u.groupName || "—"}</TableCell>;
+                          return (
+                            <TableCell key="groupName">
+                              {u.groupName || "—"}
+                            </TableCell>
+                          );
                         case "scoutCounty":
                           return (
                             <TableCell key="scoutCounty">
-                              {u.scoutCounty ? <Tag size="sm">{u.scoutCounty}</Tag> : "—"}
+                              {u.scoutCounty ? (
+                                <Tag size="sm">{u.scoutCounty}</Tag>
+                              ) : (
+                                "—"
+                              )}
                             </TableCell>
                           );
                         case "province":
-                          return <TableCell key="province">{derivedProvince || "—"}</TableCell>;
+                          return (
+                            <TableCell key="province">
+                              {derivedProvince || "—"}
+                            </TableCell>
+                          );
                         case "skillLevelNumber":
                           return (
                             <TableCell key="skillLevelNumber">
-                              {typeof u.skillLevelNumber === "number" ? u.skillLevelNumber : "—"}
+                              {typeof u.skillLevelNumber === "number"
+                                ? u.skillLevelNumber
+                                : "—"}
                             </TableCell>
                           );
                         case "role":
                           return (
                             <TableCell key="role">
-                              <Tag type={setRoleColor(u.role)} size="sm">{u.role}</Tag>
+                              <Tag type={setRoleColor(u.role)} size="sm">
+                                {u.role}
+                              </Tag>
                             </TableCell>
                           );
                         case "createdAt":
@@ -282,7 +339,9 @@ export default function AdminUsersNew() {
                           );
                         default:
                           return (
-                            <TableCell key={String(key)}>{(u as any)[key] ?? "—"}</TableCell>
+                            <TableCell key={String(key)}>
+                              {(u as any)[key] ?? "—"}
+                            </TableCell>
                           );
                       }
                     })}
@@ -346,20 +405,26 @@ export default function AdminUsersNew() {
               id="edit-name"
               labelText="Full name"
               value={editUser.name || ""}
-              onChange={(e: any) => setEditUser((u) => ({ ...u!, name: e.target.value }))}
+              onChange={(e: any) =>
+                setEditUser((u) => ({ ...u!, name: e.target.value }))
+              }
             />
             <TextInput
               id="edit-email"
               labelText="Email"
               type="email"
               value={editUser.email || ""}
-              onChange={(e: any) => setEditUser((u) => ({ ...u!, email: e.target.value }))}
+              onChange={(e: any) =>
+                setEditUser((u) => ({ ...u!, email: e.target.value }))
+              }
             />
             <TextInput
               id="edit-group"
               labelText="Group"
               value={editUser.groupName || ""}
-              onChange={(e: any) => setEditUser((u) => ({ ...u!, groupName: e.target.value }))}
+              onChange={(e: any) =>
+                setEditUser((u) => ({ ...u!, groupName: e.target.value }))
+              }
             />
             <Layer>
               <Dropdown
@@ -390,8 +455,14 @@ export default function AdminUsersNew() {
               min={0}
               step={1}
               value={Number(editUser.skillLevelNumber ?? 1)}
-              onChange={(_evt: unknown, { value }: { value: number | string }) =>
-                setEditUser((u) => ({ ...u!, skillLevelNumber: Number(value || 1) }))
+              onChange={(
+                _evt: unknown,
+                { value }: { value: number | string },
+              ) =>
+                setEditUser((u) => ({
+                  ...u!,
+                  skillLevelNumber: Number(value || 1),
+                }))
               }
             />
             <Layer>
@@ -401,7 +472,9 @@ export default function AdminUsersNew() {
                 titleText="Role"
                 items={ROLE_OPTIONS}
                 selectedItem={editUser.role || "Pending"}
-                onChange={(e: { selectedItem: User["role"] }) => setEditUser((u) => ({ ...u!, role: e.selectedItem }))}
+                onChange={(e: { selectedItem: User["role"] }) =>
+                  setEditUser((u) => ({ ...u!, role: e.selectedItem }))
+                }
                 itemToString={(i: any) => i || ""}
               />
             </Layer>

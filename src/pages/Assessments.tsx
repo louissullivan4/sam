@@ -93,7 +93,13 @@ export default function Assessments() {
     const term = search.trim().toLowerCase();
 
     let out = rows.filter((r) => {
-      const haystack = [r?.name, r?.email, r?.groupName, r?.scoutCounty, r?.province]
+      const haystack = [
+        r?.name,
+        r?.email,
+        r?.groupName,
+        r?.scoutCounty,
+        r?.province,
+      ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -108,7 +114,8 @@ export default function Assessments() {
     }
     if (countyFilter) {
       out = out.filter(
-        (r) => r.scoutCounty?.replace("Scout County", "").trim() === countyFilter,
+        (r) =>
+          r.scoutCounty?.replace("Scout County", "").trim() === countyFilter,
       );
     }
     if (provinceFilter) {
@@ -177,9 +184,7 @@ export default function Assessments() {
               <TableToolbarContent>
                 <TableToolbarSearch
                   persistent
-                  onChange={(e: any) =>
-                    setSearch(e.target.value)
-                  }
+                  onChange={(e: any) => setSearch(e.target.value)}
                 />
                 <Button kind="tertiary" onClick={() => setIsFilterOpen(true)}>
                   Filters
@@ -229,7 +234,9 @@ export default function Assessments() {
                       <TableCell>
                         <Tag type="gray">{data.province ?? ""}</Tag>
                       </TableCell>
-                      <TableCell>{String(data.skillLevelNumber ?? 1)}</TableCell>
+                      <TableCell>
+                        {String(data.skillLevelNumber ?? 1)}
+                      </TableCell>
                       <TableCell>
                         {String(data.numberOfPeopleToBeAssessed ?? 1)}
                       </TableCell>
@@ -275,7 +282,10 @@ export default function Assessments() {
         <ModalBody hasScrollingContent>
           <div className="cds--grid">
             <div className="cds--row">
-              <div className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4" style={{ marginBottom: "1em"}}>
+              <div
+                className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4"
+                style={{ marginBottom: "1em" }}
+              >
                 <Dropdown
                   id="filter-status"
                   titleText="Status"
@@ -288,7 +298,10 @@ export default function Assessments() {
                   }
                 />
               </div>
-              <div className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4" style={{ marginBottom: "1em"}}>
+              <div
+                className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4"
+                style={{ marginBottom: "1em" }}
+              >
                 <Dropdown
                   id="filter-group"
                   titleText="Group"
@@ -301,7 +314,10 @@ export default function Assessments() {
                   }
                 />
               </div>
-              <div className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4" style={{ marginBottom: "1em"}}>
+              <div
+                className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4"
+                style={{ marginBottom: "1em" }}
+              >
                 <Dropdown
                   id="filter-county"
                   titleText="County"

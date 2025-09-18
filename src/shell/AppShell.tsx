@@ -18,7 +18,7 @@ import { useEffect } from "react";
 export default function AppShell() {
   const loc = useLocation();
   const { userData, userLoading } = useUser();
-  
+
   useEffect(() => {
     if (!userLoading && userData?.role === "Pending") {
       signOut(auth);

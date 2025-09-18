@@ -49,13 +49,20 @@ export default function Requests() {
       collection(db, "requests"),
       orderBy("createdAt", "desc"),
     );
-    return onSnapshot(allRequests, (snap: { docs: { id: unknown; data: () => unknown; }[]; }) => {
-      setRows(
-        snap.docs.map(
-          (doc: { id: unknown; data: () => unknown; }) => ({ requestId: doc.id, ...(doc.data() as Record<string, unknown>) }) as Request,
-        ),
-      );
-    });
+    return onSnapshot(
+      allRequests,
+      (snap: { docs: { id: unknown; data: () => unknown }[] }) => {
+        setRows(
+          snap.docs.map(
+            (doc: { id: unknown; data: () => unknown }) =>
+              ({
+                requestId: doc.id,
+                ...(doc.data() as Record<string, unknown>),
+              }) as Request,
+          ),
+        );
+      },
+    );
   }, []);
 
   const { statusOptions, groupOptions, countyOptions, provinceOptions } =
@@ -98,7 +105,8 @@ export default function Requests() {
     }
     if (countyFilter) {
       out = out.filter(
-        (r) => r.scoutCounty?.replace("Scout County", "").trim() === countyFilter,
+        (r) =>
+          r.scoutCounty?.replace("Scout County", "").trim() === countyFilter,
       );
     }
     if (provinceFilter) {
@@ -167,9 +175,7 @@ export default function Requests() {
               <TableToolbarContent>
                 <TableToolbarSearch
                   persistent
-                  onChange={(e: any) =>
-                    setSearch(e.target.value)
-                  }
+                  onChange={(e: any) => setSearch(e.target.value)}
                 />
                 <div className="cds--toolbar-item">
                   <Button kind="tertiary" onClick={() => setIsFilterOpen(true)}>
@@ -223,7 +229,9 @@ export default function Requests() {
                       <TableCell>
                         <Tag type="gray">{data.province ?? ""}</Tag>
                       </TableCell>
-                      <TableCell>{String(data.skillLevelNumber ?? 1)}</TableCell>
+                      <TableCell>
+                        {String(data.skillLevelNumber ?? 1)}
+                      </TableCell>
                       <TableCell>
                         {String(data.numberOfPeopleToBeAssessed ?? 1)}
                       </TableCell>
@@ -269,7 +277,10 @@ export default function Requests() {
         <ModalBody hasScrollingContent>
           <div className="cds--grid">
             <div className="cds--row">
-              <div className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4" style={{ marginBottom: "1em"}}>
+              <div
+                className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4"
+                style={{ marginBottom: "1em" }}
+              >
                 <Dropdown
                   id="filter-status"
                   titleText="Status"
@@ -283,7 +294,10 @@ export default function Requests() {
                   helperText="Filter by exact status"
                 />
               </div>
-              <div className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4" style={{ marginBottom: "1em"}}>
+              <div
+                className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4"
+                style={{ marginBottom: "1em" }}
+              >
                 <Dropdown
                   id="filter-group"
                   titleText="Group"
@@ -297,7 +311,10 @@ export default function Requests() {
                   helperText="Filter by exact group"
                 />
               </div>
-              <div className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4" style={{ marginBottom: "1em"}}>
+              <div
+                className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4"
+                style={{ marginBottom: "1em" }}
+              >
                 <Dropdown
                   id="filter-county"
                   titleText="County"
@@ -311,7 +328,10 @@ export default function Requests() {
                   helperText="County (without 'Scout County')"
                 />
               </div>
-              <div className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4" style={{ marginBottom: "1em"}}>
+              <div
+                className="cds--col-sm-4 cds--col-md-4 cds--col-lg-4"
+                style={{ marginBottom: "1em" }}
+              >
                 <Dropdown
                   id="filter-province"
                   titleText="Province"
