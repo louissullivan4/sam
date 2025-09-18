@@ -49,7 +49,7 @@ export default function AssessmentDetail() {
     if (!id) return;
     const ref = doc(db, "requests", id).withConverter({
       toFirestore: (data: Request) => data,
-      fromFirestore: (snap) => snap.data() as Request
+      fromFirestore: (snap) => snap.data() as Request,
     });
     const unsub = onSnapshot(
       ref,
@@ -73,7 +73,7 @@ export default function AssessmentDetail() {
         }
         setLoading(false);
       },
-      (err: { message: SetStateAction<string | null>; }) => {
+      (err: { message: SetStateAction<string | null> }) => {
         setActionError(err.message);
         setLoading(false);
       },
@@ -109,19 +109,17 @@ export default function AssessmentDetail() {
 
   const canUnClaim = useMemo(
     () =>
-      (!!req &&
+      !!req &&
       !!userData &&
       req.status !== "New" &&
       req.status !== "Completed" &&
-      req.status !== "Cancelled") && (req.accessorId === userData.uid || userData?.role === "Admin"),
+      req.status !== "Cancelled" &&
+      (req.accessorId === userData.uid || userData?.role === "Admin"),
     [req, userData],
   );
 
   const canClaim = useMemo(
-    () =>
-      !!req &&
-      !req.accessorId &&
-      req.status === "New",
+    () => !!req && !req.accessorId && req.status === "New",
     [req],
   );
 
@@ -147,7 +145,7 @@ export default function AssessmentDetail() {
     } catch (e) {
       setActionError(e instanceof Error ? e.message : String(e));
     }
-  } 
+  }
 
   async function completeRequest() {
     if (!req) return;
@@ -207,7 +205,7 @@ export default function AssessmentDetail() {
     }
   }
 
-   async function unAssignFromMe() {
+  async function unAssignFromMe() {
     if (!req || !userData) return;
     setActionError(null);
     try {
@@ -218,9 +216,9 @@ export default function AssessmentDetail() {
       };
       await updateDoc(doc(db, "requests", req.id), {
         status: "New",
-        accessorId: '',
-        accessorName: '',
-        accessorEmail: '',
+        accessorId: "",
+        accessorName: "",
+        accessorEmail: "",
         updatedAt: new Date(),
         notes: [...(req.notes || []), note],
       });
@@ -234,10 +232,10 @@ export default function AssessmentDetail() {
     setActionError(null);
     try {
       const note = {
-      authorId: userData?.name || "unknown",
-      createdAt: new Date(),
-      content: `Request edited by ${userData?.email || "unknown"}`,
-    };
+        authorId: userData?.name || "unknown",
+        createdAt: new Date(),
+        content: `Request edited by ${userData?.email || "unknown"}`,
+      };
       await updateDoc(doc(db, "requests", req.id), {
         name: editValues.name.trim(),
         email: editValues.email.trim(),
@@ -316,7 +314,6 @@ export default function AssessmentDetail() {
         />
       )}
 
-      {/* Header with kebab menu */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <h3 style={{ margin: 0, flex: "0 0 auto" }}>
           Request Number: {req.id}
@@ -324,17 +321,14 @@ export default function AssessmentDetail() {
         <div style={{ flex: 1 }} />
         <OverflowMenu size="lg">
           {canClaim && (
-            <OverflowMenuItem
-              itemText="Assign To Me"
-              onClick={assignToMe}
-            />
+            <OverflowMenuItem itemText="Assign To Me" onClick={assignToMe} />
           )}
           <OverflowMenuItem
             itemText="Edit"
             onClick={() => setEditing(true)}
             disabled={!canEdit || editing}
           />
-          <OverflowMenuItem 
+          <OverflowMenuItem
             itemText="In Progress"
             onClick={inProgressRequest}
             disabled={!canInProgress}
@@ -369,7 +363,6 @@ export default function AssessmentDetail() {
             </StructuredListRow>
           </StructuredListHead>
           <StructuredListBody>
-            {/* Requester name */}
             <StructuredListRow>
               <StructuredListCell>Requester</StructuredListCell>
               <StructuredListCell>
@@ -389,7 +382,6 @@ export default function AssessmentDetail() {
               </StructuredListCell>
             </StructuredListRow>
 
-            {/* Email */}
             <StructuredListRow>
               <StructuredListCell>Email</StructuredListCell>
               <StructuredListCell>
@@ -410,7 +402,6 @@ export default function AssessmentDetail() {
               </StructuredListCell>
             </StructuredListRow>
 
-            {/* Skill level */}
             <StructuredListRow>
               <StructuredListCell>
                 Assessment Skill Level Requested
@@ -438,7 +429,6 @@ export default function AssessmentDetail() {
               </StructuredListCell>
             </StructuredListRow>
 
-            {/* Number of people */}
             <StructuredListRow>
               <StructuredListCell>Number of People</StructuredListCell>
               <StructuredListCell>
@@ -490,7 +480,6 @@ export default function AssessmentDetail() {
           </StructuredListBody>
         </StructuredListWrapper>
 
-        {/* Edit controls */}
         {editing && (
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <Button kind="primary" onClick={handleSaveEdit}>
