@@ -33,10 +33,13 @@ import { useNavigate } from "react-router-dom";
 import { type Request } from "../types";
 import { formatDate, setTagType } from "../lib/comm";
 import useUser from "../components/useUser";
+import useIsSmallScreen from "../hooks/useIsSmallScreen";
+import RequestRowCard from "../components/RequestRowCard";
 
 export default function Assessments() {
   const { userData, userLoading } = useUser();
   const nav = useNavigate();
+  const isSmall = useIsSmallScreen();
 
   const [rows, setRows] = useState<Request[]>([]);
   const [search, setSearch] = useState("");
@@ -164,114 +167,167 @@ export default function Assessments() {
 
   return (
     <>
-      <DataTable
-        rows={tableRows}
-        headers={[
-          { key: "name", header: "Name" },
-          { key: "groupName", header: "Group" },
-          { key: "scoutCounty", header: "County" },
-          { key: "province", header: "Province" },
-          { key: "skillLevelNumber", header: "Requested Skill Level" },
-          { key: "numberOfPeopleToBeAssessed", header: "No. of People" },
-          { key: "status", header: "Status" },
-          { key: "createdAt", header: "Created" },
-          { key: "updatedAt", header: "Last Updated" },
-        ]}
-      >
-        {({ rows, headers, getHeaderProps, getTableProps }) => (
-          <TableContainer title="My Assessments">
-            <TableToolbar>
-              <TableToolbarContent>
-                <TableToolbarSearch
-                  persistent
-                  onChange={(e: any) => setSearch(e.target.value)}
-                />
-                <Button kind="tertiary" onClick={() => setIsFilterOpen(true)}>
-                  Filters
-                </Button>
-                <Button
-                  kind="ghost"
-                  onClick={clearAllFilters}
-                  disabled={
-                    statusFilter === "All" &&
-                    !groupFilter &&
-                    !countyFilter &&
-                    !provinceFilter
-                  }
-                >
-                  Clear
-                </Button>
-              </TableToolbarContent>
-            </TableToolbar>
+      {isSmall ? (
+        <div className="stack-gap">
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <TableToolbarSearch
+              persistent
+              onChange={(e: any) => setSearch(e.target.value)}
+            />
+            <Button kind="ghost" onClick={() => setIsFilterOpen(true)}>
+              Filters
+            </Button>
+            <Button
+              kind="ghost"
+              onClick={clearAllFilters}
+              disabled={
+                statusFilter === "All" &&
+                !groupFilter &&
+                !countyFilter &&
+                !provinceFilter
+              }
+            >
+              Clear
+            </Button>
+          </div>
 
-            <Table {...getTableProps()}>
-              <TableHead>
-                <TableRow>
-                  {headers.map((h) => (
-                    <TableHeader {...getHeaderProps({ header: h })}>
-                      {h.header}
-                    </TableHeader>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((r) => {
-                  const data = dataById.get(r.id);
-                  if (!data) return null;
-                  return (
-                    <TableRow
-                      key={r.id}
-                      onClick={() => nav(`/assessments/${r.id}`)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <TableCell>{data.name ?? ""}</TableCell>
-                      <TableCell>{data.groupName ?? ""}</TableCell>
-                      <TableCell>
-                        {data.scoutCounty
-                          ? data.scoutCounty.replace("Scout County", "")
-                          : ""}
-                      </TableCell>
-                      <TableCell>
-                        <Tag type="gray">{data.province ?? ""}</Tag>
-                      </TableCell>
-                      <TableCell>
-                        {String(data.skillLevelNumber ?? 1)}
-                      </TableCell>
-                      <TableCell>
-                        {String(data.numberOfPeopleToBeAssessed ?? 1)}
-                      </TableCell>
-                      <TableCell>
-                        <Tag type={setTagType(data.status)}>
-                          {data.status ?? ""}
-                        </Tag>
-                      </TableCell>
-                      <TableCell>
-                        {data.createdAt ? formatDate(data.createdAt, true) : ""}
-                      </TableCell>
-                      <TableCell>
-                        {data.updatedAt ? formatDate(data.updatedAt, true) : ""}
-                      </TableCell>
+          {paged.map((data) => (
+            <RequestRowCard
+              key={data.requestId}
+              data={data}
+              onClick={() => nav(`/assessments/${data.requestId}`)}
+            />
+          ))}
+
+          <div>
+            <Pagination
+              totalItems={filtered.length}
+              page={page}
+              pageSize={pageSize}
+              pageSizes={[10, 20, 50, 100]}
+              onChange={({ page, pageSize }) => {
+                setPage(page);
+                setPageSize(pageSize);
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        <DataTable
+          rows={tableRows}
+          headers={[
+            { key: "name", header: "Name" },
+            { key: "groupName", header: "Group" },
+            { key: "scoutCounty", header: "County" },
+            { key: "province", header: "Province" },
+            { key: "skillLevelNumber", header: "Requested Skill Level" },
+            { key: "numberOfPeopleToBeAssessed", header: "No. of People" },
+            { key: "status", header: "Status" },
+            { key: "createdAt", header: "Created" },
+            { key: "updatedAt", header: "Last Updated" },
+          ]}
+        >
+          {({ rows, headers, getHeaderProps, getTableProps }) => (
+            <TableContainer title="My Assessments">
+              <TableToolbar>
+                <TableToolbarContent>
+                  <TableToolbarSearch
+                    persistent
+                    onChange={(e: any) => setSearch(e.target.value)}
+                  />
+                  <Button kind="ghost" onClick={() => setIsFilterOpen(true)}>
+                    Filters
+                  </Button>
+                  <Button
+                    kind="ghost"
+                    onClick={clearAllFilters}
+                    disabled={
+                      statusFilter === "All" &&
+                      !groupFilter &&
+                      !countyFilter &&
+                      !provinceFilter
+                    }
+                  >
+                    Clear
+                  </Button>
+                </TableToolbarContent>
+              </TableToolbar>
+
+              <div className="table-scroll">
+                <Table {...getTableProps()}>
+                  <TableHead>
+                    <TableRow>
+                      {headers.map((h) => (
+                        <TableHeader {...getHeaderProps({ header: h })}>
+                          {h.header}
+                        </TableHeader>
+                      ))}
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  </TableHead>
+                  <TableBody>
+                    {rows.map((r) => {
+                      const data = dataById.get(r.id);
+                      if (!data) return null;
+                      return (
+                        <TableRow
+                          key={r.id}
+                          onClick={() => nav(`/assessments/${r.id}`)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <TableCell>{data.name ?? ""}</TableCell>
+                          <TableCell>{data.groupName ?? ""}</TableCell>
+                          <TableCell>
+                            {data.scoutCounty
+                              ? data.scoutCounty.replace("Scout County", "")
+                              : ""}
+                          </TableCell>
+                          <TableCell>
+                            <Tag type="gray">{data.province ?? ""}</Tag>
+                          </TableCell>
+                          <TableCell>
+                            {String(data.skillLevelNumber ?? 1)}
+                          </TableCell>
+                          <TableCell>
+                            {String(data.numberOfPeopleToBeAssessed ?? 1)}
+                          </TableCell>
+                          <TableCell>
+                            <Tag type={setTagType(data.status)}>
+                              {data.status ?? ""}
+                            </Tag>
+                          </TableCell>
+                          <TableCell>
+                            {data.createdAt
+                              ? formatDate(data.createdAt, true)
+                              : ""}
+                          </TableCell>
+                          <TableCell>
+                            {data.updatedAt
+                              ? formatDate(data.updatedAt, true)
+                              : ""}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
 
-            <div style={{ paddingBlock: "0.5rem" }}>
-              <Pagination
-                totalItems={filtered.length}
-                page={page}
-                pageSize={pageSize}
-                pageSizes={[10, 20, 50, 100]}
-                onChange={({ page, pageSize }) => {
-                  setPage(page);
-                  setPageSize(pageSize);
-                }}
-              />
-            </div>
-          </TableContainer>
-        )}
-      </DataTable>
+              <div style={{ paddingBlock: "0.5rem" }}>
+                <Pagination
+                  totalItems={filtered.length}
+                  page={page}
+                  pageSize={pageSize}
+                  pageSizes={[10, 20, 50, 100]}
+                  onChange={({ page, pageSize }) => {
+                    setPage(page);
+                    setPageSize(pageSize);
+                  }}
+                />
+              </div>
+            </TableContainer>
+          )}
+        </DataTable>
+      )}
 
       <ComposedModal
         open={isFilterOpen}
