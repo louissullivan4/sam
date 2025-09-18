@@ -21,7 +21,7 @@ import {
 } from "@carbon/react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../firebase";
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { type Request } from "../types";
 import { formatDate, setTagType } from "../lib/comm";
@@ -48,10 +48,11 @@ export default function Requests() {
       collection(db, "requests"),
       orderBy("createdAt", "desc"),
     );
-    return onSnapshot(allRequests, (snap) => {
+    return onSnapshot(allRequests, (snap: { docs: { id: unknown; data: () => unknown; }[]; }) => {
       setRows(
         snap.docs.map(
-          (doc) => ({ requestId: doc.id, ...(doc.data() as any) }) as Request,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (doc: { id: unknown; data: () => unknown; }) => ({ requestId: doc.id, ...(doc.data() as any) }) as Request,
         ),
       );
     });
@@ -163,7 +164,7 @@ export default function Requests() {
               <TableToolbarContent>
                 <TableToolbarSearch
                   persistent
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  onChange={(e: any) =>
                     setSearch(e.target.value)
                   }
                 />

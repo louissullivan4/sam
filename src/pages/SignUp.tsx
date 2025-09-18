@@ -8,12 +8,13 @@ import {
   Tile,
   PasswordInput,
 } from "@carbon/react";
-import { addDoc, collection } from "firebase/firestore";
-import { db } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
 import { scoutCounties, countyToProvince } from "../refdata";
 import React, { useEffect, useState } from "react";
 import type { User } from "../types";
 import { Link, useNavigate } from "react-router-dom";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 export default function PublicForm() {
   const nav = useNavigate();
@@ -69,10 +70,18 @@ export default function PublicForm() {
       return;
     }
 
-    const doc: Omit<User, "uid"> = {
+    const cred = await createUserWithEmailAndPassword(auth, email.trim(), password)
+      .catch((e) => {
+        setError(e.message);
+        return null;
+      });
+
+    if (!cred) return;
+
+    const userData: Omit<User, "password"> = {
+      uid: cred.user.uid,
       name: name.trim(),
       email: email.trim(),
-      password: password.trim(),
       role: "Pending",
       groupName: group.trim(),
       scoutCounty: scoutCounty.trim(),
@@ -82,7 +91,7 @@ export default function PublicForm() {
       updatedAt: new Date(),
     };
 
-    await addDoc(collection(db, "users"), doc);
+    await setDoc(doc(db, "users", cred.user.uid), userData);
     setSent(true);
 
     nav("/pending");

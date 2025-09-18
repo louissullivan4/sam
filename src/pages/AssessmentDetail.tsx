@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, type SetStateAction } from "react";
 import { useParams } from "react-router-dom";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -48,7 +48,10 @@ export default function AssessmentDetail() {
 
   useEffect(() => {
     if (!id) return;
-    const ref = doc(db, "requests", id);
+    const ref = doc(db, "requests", id).withConverter({
+      toFirestore: (data: Request) => data,
+      fromFirestore: (snap) => snap.data() as Request
+    });
     const unsub = onSnapshot(
       ref,
       (snap) => {
@@ -71,7 +74,7 @@ export default function AssessmentDetail() {
         }
         setLoading(false);
       },
-      (err) => {
+      (err: { message: SetStateAction<string | null>; }) => {
         setActionError(err.message);
         setLoading(false);
       },

@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "engines": {
-    "node": ">=22.14.0<=23.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "dev": "vite",
@@ -13,12 +13,14 @@
     "lint": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
     "check": "npm run typecheck && npm run lint && npm run format",
-    "preview": "vite preview --port 5173"
+    "preview": "vite preview --port 5173",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "@carbon/icons-react": "^11.67.0",
     "@carbon/react": "^1.91.0",
     "firebase": "^12.2.1",
+    "firestore": "^1.1.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-firebase-hooks": "^5.1.1",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@types/firebase": "^2.4.32",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@types/react-router-dom": "^5.3.3",

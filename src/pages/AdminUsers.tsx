@@ -35,6 +35,7 @@ import {
 import useUser from "../components/useUser";
 import type { User } from "../types";
 import { scoutCounties, countyToProvince } from "../refdata";
+import { formatDate } from "../lib/comm";
 
 const ROLE_OPTIONS: User["role"][] = ["Admin", "Accessor", "Inactive", "Rejected", "Pending"];
 
@@ -229,8 +230,9 @@ export default function AdminUsersNew() {
             </TableHead>
             <TableBody>
               {rows.map((r) => {
-                const u = list.find((x) => x.uid === r.id)!;
-                const derivedProvince = countyToProvince[u.scoutCounty] || u.province || "";
+                const u = list.find((x) => x.uid === r.id);
+                if (!u) return null;
+                const derivedProvince = countyToProvince[u.scoutCounty as any] || u.province || "";
                 return (
                   <TableRow key={u.uid} aria-busy={savingId === u.uid}>
                     {columns.map(({ key }) => {
@@ -264,9 +266,7 @@ export default function AdminUsersNew() {
                         case "createdAt":
                           return (
                             <TableCell key="createdAt">
-                              {u.createdAt?.toDate
-                                ? u.createdAt.toDate().toLocaleDateString()
-                                : "—"}
+                              {formatDate(u.createdAt) || "—"}
                             </TableCell>
                           );
                         default:

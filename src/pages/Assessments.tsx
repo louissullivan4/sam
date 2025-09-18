@@ -40,14 +40,12 @@ export default function Assessments() {
   const [rows, setRows] = useState<Request[]>([]);
   const [search, setSearch] = useState("");
 
-  // filters (shown in modal)
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [countyFilter, setCountyFilter] = useState<string | null>(null);
   const [provinceFilter, setProvinceFilter] = useState<string | null>(null);
 
-  // pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -69,7 +67,6 @@ export default function Assessments() {
     });
   }, [userData?.email, userLoading]);
 
-  // unique options for filters
   const { statusOptions, groupOptions, countyOptions, provinceOptions } =
     useMemo(() => {
       const statuses = new Set<string>();
@@ -91,7 +88,6 @@ export default function Assessments() {
       };
     }, [rows]);
 
-  // search + filters
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
 
@@ -121,25 +117,21 @@ export default function Assessments() {
     return out;
   }, [rows, search, statusFilter, groupFilter, countyFilter, provinceFilter]);
 
-  // reset page when dependencies change
   useEffect(() => {
     setPage(1);
   }, [search, statusFilter, groupFilter, countyFilter, provinceFilter]);
 
-  // paginate AFTER filtering
   const paged = useMemo(() => {
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
     return filtered.slice(start, end);
   }, [filtered, page, pageSize]);
 
-  // DataTable wants an `id`
   const tableRows = useMemo(
     () => paged.map((row) => ({ ...row, id: row.requestId })),
     [paged],
   );
 
-  // fast lookup for current page; avoids transient undefined during re-render
   const dataById = useMemo(() => {
     const m = new Map<string, Request>();
     paged.forEach((x) => m.set(x.requestId, x));
@@ -252,7 +244,6 @@ export default function Assessments() {
               </TableBody>
             </Table>
 
-            {/* Pagination */}
             <div style={{ paddingBlock: "0.5rem" }}>
               <Pagination
                 totalItems={filtered.length}
@@ -269,7 +260,6 @@ export default function Assessments() {
         )}
       </DataTable>
 
-      {/* Filters Modal */}
       <ComposedModal
         open={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
