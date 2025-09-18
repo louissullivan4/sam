@@ -32,7 +32,6 @@ export default function AssessmentDetail() {
   const [loading, setLoading] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // edit mode state
   const [editing, setEditing] = useState(false);
   const [editValues, setEditValues] = useState<{
     name: string;

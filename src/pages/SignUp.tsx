@@ -63,38 +63,44 @@ export default function PublicForm() {
     e.preventDefault();
     setError(null);
 
-    const { isValid, errorMessage } = validatePassword(password, confirmPassword);
+    try {
 
-    if (!isValid) {
-      setError(errorMessage);
-      return;
+      const { isValid, errorMessage } = validatePassword(password, confirmPassword);
+
+      if (!isValid) {
+        setError(errorMessage);
+        return;
+      }
+
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password)
+        .catch((e) => {
+          setError(e.message);
+          return null;
+        });
+
+      if (!cred) return;
+
+      const userData: Omit<User, "password"> = {
+        uid: cred.user.uid,
+        name: name.trim(),
+        email: email.trim(),
+        role: "Pending",
+        groupName: group.trim(),
+        scoutCounty: scoutCounty.trim(),
+        province: province.trim(),
+        skillLevelNumber,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await setDoc(doc(db, "users", cred.user.uid), userData);
+      setSent(true);
+
+      nav("/pending");
+    } catch (e:unknown) {
+      console.error(e);
+      setError("Could not create your account. Please try again or contact sullivanlouis0@gmail.com");
     }
-
-    const cred = await createUserWithEmailAndPassword(auth, email.trim(), password)
-      .catch((e) => {
-        setError(e.message);
-        return null;
-      });
-
-    if (!cred) return;
-
-    const userData: Omit<User, "password"> = {
-      uid: cred.user.uid,
-      name: name.trim(),
-      email: email.trim(),
-      role: "Pending",
-      groupName: group.trim(),
-      scoutCounty: scoutCounty.trim(),
-      province: province.trim(),
-      skillLevelNumber,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    await setDoc(doc(db, "users", cred.user.uid), userData);
-    setSent(true);
-
-    nav("/pending");
   }
 
   return (

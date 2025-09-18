@@ -22,6 +22,5 @@ export default function useUser() {
     setUserData((prev) => (prev ? { ...prev, uid: user.uid } : null));
     return unsub;
   }, [user]);
-  console.log("useUser", { user, userData, loading, userLoaded });
   return { userData: userData, userLoading: loading || !userLoaded };
 }

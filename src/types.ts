@@ -1,3 +1,5 @@
+import type { FieldValue, Timestamp } from "firebase/firestore";
+
 export interface User {
   uid: string;
   email: string;
@@ -8,8 +10,8 @@ export interface User {
   scoutCounty: string;
   province: string;
   skillLevelNumber: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | Timestamp | FieldValue;
+  updatedAt: Date | Timestamp | FieldValue;
 }
 
 export type StatusType =

@@ -18,6 +18,7 @@ import {
   ModalBody,
   ModalFooter,
   Dropdown,
+  SkeletonText,
 } from "@carbon/react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../firebase";
@@ -25,21 +26,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { type Request } from "../types";
 import { formatDate, setTagType } from "../lib/comm";
+import useUser from "../components/useUser";
 
 export default function Requests() {
+  const { userLoading } = useUser();
   const nav = useNavigate();
 
   const [rows, setRows] = useState<Request[]>([]);
   const [search, setSearch] = useState("");
 
-  // filters in modal
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [countyFilter, setCountyFilter] = useState<string | null>(null);
   const [provinceFilter, setProvinceFilter] = useState<string | null>(null);
 
-  // pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -51,14 +52,12 @@ export default function Requests() {
     return onSnapshot(allRequests, (snap: { docs: { id: unknown; data: () => unknown; }[]; }) => {
       setRows(
         snap.docs.map(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (doc: { id: unknown; data: () => unknown; }) => ({ requestId: doc.id, ...(doc.data() as any) }) as Request,
+          (doc: { id: unknown; data: () => unknown; }) => ({ requestId: doc.id, ...(doc.data() as Record<string, unknown>) }) as Request,
         ),
       );
     });
   }, []);
 
-  // unique options for filters
   const { statusOptions, groupOptions, countyOptions, provinceOptions } =
     useMemo(() => {
       const statuses = new Set<string>();
@@ -80,7 +79,6 @@ export default function Requests() {
       };
     }, [rows]);
 
-  // search + filters
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
 
@@ -110,25 +108,21 @@ export default function Requests() {
     return out;
   }, [rows, search, statusFilter, groupFilter, countyFilter, provinceFilter]);
 
-  // reset page when filters/search change
   useEffect(() => {
     setPage(1);
   }, [search, statusFilter, groupFilter, countyFilter, provinceFilter]);
 
-  // paginate AFTER filtering
   const paged = useMemo(() => {
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
     return filtered.slice(start, end);
   }, [filtered, page, pageSize]);
 
-  // DataTable rows need an `id`
   const tableRows = useMemo(
     () => paged.map((row) => ({ ...row, id: row.requestId })),
     [paged],
   );
 
-  // fast lookup for current page
   const dataById = useMemo(() => {
     const m = new Map<string, Request>();
     paged.forEach((x) => m.set(x.requestId, x));
@@ -141,6 +135,15 @@ export default function Requests() {
     setCountyFilter(null);
     setProvinceFilter(null);
   };
+
+  if (userLoading) {
+    return (
+      <div style={{ maxWidth: 900 }}>
+        <SkeletonText heading width="30%" />
+        <SkeletonText paragraph lineCount={3} />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -203,7 +206,7 @@ export default function Requests() {
               <TableBody>
                 {rows.map((r) => {
                   const data = dataById.get(r.id);
-                  if (!data) return null; // transient mismatch
+                  if (!data) return null;
                   return (
                     <TableRow
                       key={r.id}
@@ -257,7 +260,6 @@ export default function Requests() {
         )}
       </DataTable>
 
-      {/* Filters Modal */}
       <ComposedModal
         open={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
